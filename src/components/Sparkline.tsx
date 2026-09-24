@@ -29,9 +29,10 @@ interface Props {
   trend: Trend;
   unit: Unit;
   height?: number;
+  pulse?: number;
 }
 
-export function Sparkline({ sessions, trend, unit, height = 32 }: Props) {
+export function Sparkline({ sessions, trend, unit, height = 32, pulse = 0 }: Props) {
   const [ref, width] = useWidth<HTMLDivElement>();
   const [hover, setHover] = useState<number | null>(null);
   const color = TONE[trend];
@@ -89,6 +90,9 @@ export function Sparkline({ sessions, trend, unit, height = 32 }: Props) {
           )}
           {active !== null && (
             <line x1={pts[active][0]} x2={pts[active][0]} y1={0} y2={height} stroke="var(--lb-line-strong)" strokeWidth={1} />
+          )}
+          {pulse > 0 && (
+            <circle key={pulse} className="animate-dot" cx={last[0]} cy={last[1]} r={4} fill="none" stroke={color} strokeWidth={2} />
           )}
           <circle
             cx={active !== null ? pts[active][0] : last[0]}

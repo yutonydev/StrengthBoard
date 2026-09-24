@@ -2,7 +2,7 @@ import { useEffect, useId, useMemo, useRef, useState, type FormEvent, type Keybo
 import { AlertTriangle, ArrowRight, Plus, Sparkles } from 'lucide-react';
 import type { Exercise } from '../types';
 import type { ExerciseStats } from '../lib/stats';
-import { CATALOG, rankMatches, similarity } from '../lib/similarity';
+import { rankMatches } from '../lib/similarity';
 
 interface Props {
   open: boolean;
@@ -14,9 +14,10 @@ interface Props {
   onGoTo: (id: string) => void;
 }
 
-type Option =
-  | { kind: 'existing'; exercise: Exercise; score: number }
-  | { kind: 'catalog'; name: string; category: string };
+interface Option {
+  exercise: Exercise;
+  score: number;
+}
 
 export function AddExercise({ open, setOpen, exercises, stats, categories, onAdd, onGoTo }: Props) {
   const uid = useId();
@@ -32,24 +33,14 @@ export function AddExercise({ open, setOpen, exercises, stats, categories, onAdd
     if (open) inputRef.current?.focus();
   }, [open]);
 
-  const existing = useMemo(() => rankMatches(name, exercises, (e) => e.name).slice(0, 4), [name, exercises]);
+  const options: Option[] = useMemo(
+    () => rankMatches(name, exercises, (e) => e.name).slice(0, 5).map((m) => ({ exercise: m.item, score: m.score })),
+    [name, exercises],
+  );
 
-  const catalog = useMemo(() => {
-    if (!name.trim()) return [];
-    const untracked = CATALOG.filter((c) => !exercises.some((e) => similarity(c.name, e.name) === 1));
-    return rankMatches(name, untracked, (c) => c.name, 0.55)
-      .slice(0, 5)
-      .map((m) => m.item);
-  }, [name, exercises]);
-
-  const options: Option[] = [
-    ...existing.map((m) => ({ kind: 'existing' as const, exercise: m.item, score: m.score })),
-    ...catalog.map((c) => ({ kind: 'catalog' as const, ...c })),
-  ];
-
-  const top = existing[0];
-  const duplicate = top && top.score === 1 ? top.item : undefined;
-  const similar = !duplicate && top && top.score >= 0.75 ? top.item : undefined;
+  const top = options[0];
+  const duplicate = top && top.score === 1 ? top.exercise : undefined;
+  const similar = !duplicate && top && top.score >= 0.75 ? top.exercise : undefined;
 
   function reset() {
     setName('');
@@ -66,16 +57,8 @@ export function AddExercise({ open, setOpen, exercises, stats, categories, onAdd
   }
 
   function choose(opt: Option) {
-    if (opt.kind === 'existing') {
-      close();
-      onGoTo(opt.exercise.id);
-      return;
-    }
-    setName(opt.name);
-    if (!category) setCategory(opt.category);
-    setListOpen(false);
-    setActive(-1);
-    inputRef.current?.focus();
+    close();
+    onGoTo(opt.exercise.id);
   }
 
   function submit(e: FormEvent) {
@@ -125,7 +108,6 @@ export function AddExercise({ open, setOpen, exercises, stats, categories, onAdd
 
   const listId = `${uid}-list`;
   const showList = listOpen && options.length > 0;
-  let groupShown = { existing: false, catalog: false };
 
   return (
     <form
@@ -177,19 +159,12 @@ export function AddExercise({ open, setOpen, exercises, stats, categories, onAdd
               className="absolute top-full right-0 left-0 z-40 mt-1 max-h-72 overflow-auto rounded-lg border border-line-strong bg-surface-3 p-1 shadow-pop"
             >
               {options.map((opt, i) => {
-                const header =
-                  opt.kind === 'existing' && !groupShown.existing
-                    ? 'Already tracking'
-                    : opt.kind === 'catalog' && !groupShown.catalog
-                      ? 'Suggestions'
-                      : null;
-                groupShown = { ...groupShown, [opt.kind]: true };
-                const st = opt.kind === 'existing' ? stats.get(opt.exercise.id) : undefined;
+                const st = stats.get(opt.exercise.id);
                 return (
-                  <li key={opt.kind === 'existing' ? opt.exercise.id : opt.name} role="presentation">
-                    {header && (
+                  <li key={opt.exercise.id} role="presentation">
+                    {i === 0 && (
                       <div className="px-2 pt-1.5 pb-1 text-[10px] font-semibold tracking-wider text-muted uppercase" role="presentation">
-                        {header}
+                        Already tracking
                       </div>
                     )}
                     <div
@@ -203,15 +178,9 @@ export function AddExercise({ open, setOpen, exercises, stats, categories, onAdd
                         i === active ? 'bg-surface-4 text-fg' : 'text-fg'
                       }`}
                     >
-                      <span className="truncate">{opt.kind === 'existing' ? opt.exercise.name : opt.name}</span>
+                      <span className="truncate">{opt.exercise.name}</span>
                       <span className="ml-auto flex shrink-0 items-center gap-1 text-xs text-muted">
-                        {opt.kind === 'existing' ? (
-                          <>
-                            {st?.sessions.length ?? 0} sessions <ArrowRight size={12} aria-hidden="true" />
-                          </>
-                        ) : (
-                          opt.category
-                        )}
+                        {st?.sessions.length ?? 0} sessions <ArrowRight size={12} aria-hidden="true" />
                       </span>
                     </div>
                   </li>
@@ -231,7 +200,6 @@ export function AddExercise({ open, setOpen, exercises, stats, categories, onAdd
             value={category}
             onChange={(e) => setCategory(e.target.value)}
             className="field"
-            placeholder="Push / Pull / Legs"
             maxLength={24}
           />
           <datalist id={`${uid}-cats`}>
@@ -262,7 +230,7 @@ export function AddExercise({ open, setOpen, exercises, stats, categories, onAdd
           <span className="inline-flex flex-wrap items-center gap-x-1.5 text-danger">
             <AlertTriangle size={13} aria-hidden="true" />
             You already track “{duplicate.name}”.
-            <button type="button" onClick={() => choose({ kind: 'existing', exercise: duplicate, score: 1 })} className="font-medium text-accent-text underline-offset-2 hover:underline">
+            <button type="button" onClick={() => choose({ exercise: duplicate, score: 1 })} className="font-medium text-accent-text underline-offset-2 hover:underline">
               Go to it
             </button>
           </span>
@@ -271,7 +239,7 @@ export function AddExercise({ open, setOpen, exercises, stats, categories, onAdd
           <span className="inline-flex flex-wrap items-center gap-x-1.5 text-muted">
             <AlertTriangle size={13} className="text-warn" aria-hidden="true" />
             Looks like <span className="font-medium text-fg">{similar.name}</span>, which you already track.
-            <button type="button" onClick={() => choose({ kind: 'existing', exercise: similar, score: top!.score })} className="font-medium text-accent-text underline-offset-2 hover:underline">
+            <button type="button" onClick={() => choose({ exercise: similar, score: top.score })} className="font-medium text-accent-text underline-offset-2 hover:underline">
               Log that instead
             </button>
           </span>

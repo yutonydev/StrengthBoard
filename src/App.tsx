@@ -22,7 +22,7 @@ import { buildStats, overview, type ExerciseStats } from './lib/stats';
 import { today } from './lib/dates';
 import { newId } from './lib/id';
 import { fmtCompact, fmtSet, fromKg } from './lib/units';
-import { DEFAULT_CATEGORIES, normalizeName, similarity } from './lib/similarity';
+import { normalizeName, similarity } from './lib/similarity';
 import { ExerciseRow, ROW_GRID, type RowActions } from './components/ExerciseRow';
 import { AddExercise } from './components/AddExercise';
 import { Menu } from './components/Menu';
@@ -59,6 +59,7 @@ export default function App({ user }: { user: AuthUser }) {
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState<string | null>(null);
   const [highlight, setHighlight] = useState<{ id: string; n: number } | null>(null);
+  const [logged, setLogged] = useState<{ id: string; n: number } | null>(null);
   const searchRef = useRef<HTMLInputElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const dataRef = useRef(data);
@@ -80,11 +81,7 @@ export default function App({ user }: { user: AuthUser }) {
 
   const summary = useMemo(() => overview(sets, statsById.values(), today()), [sets, statsById]);
 
-  const categories = useMemo(() => {
-    const used = exercises.map((e) => e.category).filter((c): c is string => !!c);
-    return Array.from(new Set([...used, ...DEFAULT_CATEGORIES]));
-  }, [exercises]);
-  const usedCategories = useMemo(
+  const categories = useMemo(
     () => Array.from(new Set(exercises.map((e) => e.category).filter((c): c is string => !!c))),
     [exercises],
   );
@@ -127,11 +124,10 @@ export default function App({ user }: { user: AuthUser }) {
         }),
       toggleLog: (id) => setLogging((cur) => (cur === id ? null : id)),
       toggleEdit: (id) => setEditing((cur) => (cur === id ? null : id)),
-      logSet: (id, s) =>
-        dispatch({
-          type: 'addSet',
-          set: { id: newId(), exerciseId: id, createdAt: Date.now(), ...s },
-        }),
+      logSet: (id, s) => {
+        dispatch({ type: 'addSet', set: { id: newId(), exerciseId: id, createdAt: Date.now(), ...s } });
+        setLogged((prev) => ({ id, n: (prev?.n ?? 0) + 1 }));
+      },
       deleteSet: (set) => {
         dispatch({ type: 'deleteSet', id: set.id });
         push(`Deleted ${fmtSet(set.weight, set.reps, dataRef.current.settings.unit)}`, () =>
@@ -253,6 +249,7 @@ export default function App({ user }: { user: AuthUser }) {
             logging={logging === e.id}
             editing={editing === e.id}
             highlight={highlight?.id === e.id ? highlight.n : 0}
+            logged={logged?.id === e.id ? logged.n : 0}
             dragDisabled={filtering}
             categories={categories}
             otherNames={allNames}
@@ -360,9 +357,9 @@ export default function App({ user }: { user: AuthUser }) {
                 <span className="kbd pointer-events-none absolute top-1/2 right-2 hidden -translate-y-1/2 sm:inline-flex">/</span>
               )}
             </div>
-            {usedCategories.length > 1 && (
+            {categories.length > 1 && (
               <div role="group" aria-label="Filter by category" className="flex flex-wrap gap-1">
-                {[null, ...usedCategories].map((c) => (
+                {[null, ...categories].map((c) => (
                   <button
                     key={c ?? 'all'}
                     type="button"

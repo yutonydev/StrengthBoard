@@ -51,6 +51,7 @@ interface Props {
   logging: boolean;
   editing: boolean;
   highlight: number;
+  logged: number;
   canMoveUp: boolean;
   canMoveDown: boolean;
   dragDisabled: boolean;
@@ -208,6 +209,7 @@ export const ExerciseRow = memo(function ExerciseRow({
   logging,
   editing,
   highlight,
+  logged,
   canMoveUp,
   canMoveDown,
   dragDisabled,
@@ -253,10 +255,10 @@ export const ExerciseRow = memo(function ExerciseRow({
       className={`border-b border-line bg-surface ${isDragging ? 'shadow-pop ring-1 ring-line-strong' : ''}`}
     >
       <div
-        key={highlight}
-        className={`${ROW_GRID} min-h-14 cursor-pointer items-center px-3 py-1.5 transition-colors hover:bg-surface-3 sm:min-h-12 ${
+        key={`${highlight}-${logged}`}
+        className={`${ROW_GRID} press-row min-h-14 cursor-pointer items-center px-3 py-1.5 transition-colors hover:bg-surface-3 sm:min-h-12 ${
           expanded ? 'bg-surface-2' : ''
-        } ${highlight ? 'animate-flash' : ''}`}
+        } ${highlight ? 'animate-flash' : ''} ${logged ? 'animate-logged' : ''}`}
         onClick={() => actions.toggleExpand(id)}
       >
         <button
@@ -265,6 +267,7 @@ export const ExerciseRow = memo(function ExerciseRow({
           {...attributes}
           {...listeners}
           aria-label={`Reorder ${exercise.name}`}
+          data-press="off"
           onClick={(e) => e.stopPropagation()}
           className={`-ml-1 hidden h-8 w-5 cursor-grab touch-none items-center justify-center rounded text-faint hover:text-muted active:cursor-grabbing sm:flex ${
             dragDisabled ? 'invisible' : ''
@@ -315,7 +318,7 @@ export const ExerciseRow = memo(function ExerciseRow({
         </div>
 
         <div className="min-w-0" title={window10.length ? `Top set, last ${window10.length} sessions` : undefined}>
-          <Sparkline sessions={window10} trend={trend} unit={unit} />
+          <Sparkline sessions={window10} trend={trend} unit={unit} pulse={logged} />
         </div>
 
         <div className="hidden min-w-0 text-[13px] md:block">
@@ -332,7 +335,11 @@ export const ExerciseRow = memo(function ExerciseRow({
               <span className="font-mono text-[13px] font-semibold text-fg">
                 {fmtSet(stats.heaviest.weight, stats.heaviest.reps, unit)}
               </span>
-              {last?.isPR ? <PrBadge className="mt-0.5" /> : <span className="text-[11px] text-muted">{fmtShortDate(stats.heaviest.date)}</span>}
+              {last?.isPR ? (
+                <PrBadge className="mt-0.5" animate={logged > 0} />
+              ) : (
+                <span className="text-[11px] text-muted">{fmtShortDate(stats.heaviest.date)}</span>
+              )}
             </>
           ) : (
             <span className="font-mono text-xs text-muted">–</span>

@@ -7,8 +7,8 @@ import { SetNewPassword } from './auth/SetNewPassword';
 import { Splash } from './components/Splash';
 import { supabaseConfigured } from './supabase';
 
-const MIN_SPLASH_MS = 900;
-const SPLASH_FADE_MS = 300;
+const MIN_SPLASH_MS = 2000;
+const SPLASH_FADE_MS = 450;
 
 function SetupNotice() {
   return (
