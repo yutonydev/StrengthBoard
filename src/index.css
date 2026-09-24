@@ -217,6 +217,165 @@
   animation: lb-toast-in 200ms ease-out;
 }
 
+.splash {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  background: var(--lb-bg);
+}
+
+.splash-leaving {
+  animation: splash-out 280ms ease forwards;
+  pointer-events: none;
+}
+
+.splash-stage {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 210px;
+  height: 210px;
+}
+
+.splash-halo {
+  position: absolute;
+  width: 210px;
+  height: 210px;
+  border-radius: 9999px;
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--lb-accent) 26%, transparent) 0%,
+    color-mix(in srgb, var(--lb-accent) 9%, transparent) 44%,
+    transparent 68%
+  );
+  filter: blur(8px);
+  animation: splash-halo 2.6s ease-in-out infinite;
+}
+
+.splash-ring {
+  position: absolute;
+  width: 210px;
+  height: 210px;
+  border-radius: 9999px;
+  border: 1px solid color-mix(in srgb, var(--lb-accent) 45%, transparent);
+  animation: splash-ring 2.6s cubic-bezier(0.32, 0.72, 0, 1) infinite;
+}
+
+.splash-mark {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  border-radius: 14px;
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--lb-accent) 22%, transparent),
+    0 12px 36px -10px color-mix(in srgb, var(--lb-accent) 45%, transparent);
+  animation: splash-rise 420ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.splash-line {
+  stroke-dasharray: 32;
+  stroke-dashoffset: 32;
+  animation: splash-draw 760ms cubic-bezier(0.22, 1, 0.36, 1) 120ms forwards;
+}
+
+.splash-word {
+  font-size: 1.125rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--lb-fg);
+  animation: splash-rise-word 620ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.splash-tagline {
+  font-size: 0.8125rem;
+  color: var(--lb-fg-muted);
+  animation: splash-rise-tagline 760ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes splash-out {
+  to {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+@keyframes splash-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes splash-halo {
+  0%,
+  100% {
+    opacity: 0.4;
+    transform: scale(0.92);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.04);
+  }
+}
+
+@keyframes splash-ring {
+  0% {
+    opacity: 0;
+    transform: scale(0.42);
+  }
+  22% {
+    opacity: 0.5;
+    transform: scale(0.56);
+  }
+  78% {
+    opacity: 0;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1);
+  }
+}
+
+@keyframes splash-rise {
+  0% {
+    opacity: 0;
+    transform: translateY(10px) scale(0.96);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes splash-rise-word {
+  0%,
+  22% {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes splash-rise-tagline {
+  0%,
+  42% {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  100% {
+    opacity: 1;
+    transform: none;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -224,5 +383,14 @@
     animation-duration: 1ms !important;
     transition-duration: 1ms !important;
     scroll-behavior: auto !important;
+  }
+  .splash-halo,
+  .splash-ring {
+    animation: none;
+    opacity: 0.5;
+    transform: none;
+  }
+  .splash-line {
+    stroke-dashoffset: 0;
   }
 }

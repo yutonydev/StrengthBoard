@@ -16,7 +16,7 @@ export interface DbSet {
   date: string;
   weight_kg: number;
   reps: number;
-  rpe: number | null;
+  rir: number | null;
   notes: string | null;
   created_at: string;
 }
@@ -39,7 +39,7 @@ export function setToDb(s: WorkoutSet): DbSet {
     date: s.date,
     weight_kg: s.weight,
     reps: s.reps,
-    rpe: s.rpe ?? null,
+    rir: s.rir ?? null,
     notes: s.notes ?? null,
     created_at: new Date(s.createdAt).toISOString(),
   };
@@ -60,7 +60,7 @@ export function setFromDb(r: DbSet): WorkoutSet {
     reps: Number(r.reps),
     createdAt: Date.parse(r.created_at),
   };
-  if (r.rpe !== null && r.rpe !== undefined) s.rpe = Number(r.rpe);
+  if (r.rir !== null && r.rir !== undefined) s.rir = Number(r.rir);
   if (r.notes) s.notes = r.notes;
   return s;
 }

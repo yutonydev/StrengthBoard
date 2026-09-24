@@ -77,10 +77,10 @@ export function sampleData(settings: Settings): AppData {
       const top = Math.max(plan.inc, Math.round(weight / plan.inc) * plan.inc);
       const reps = plan.reps[Math.floor(rand() * plan.reps.length)];
       const backoff = Math.max(plan.inc, Math.round((top * 0.88) / plan.inc) * plan.inc);
-      const rpe = Math.min(10, Math.round((7.5 + rand() * 2) * 2) / 2);
+      const rir = Math.max(0, Math.round((2.5 - rand() * 2) * 2) / 2);
       const base = now - (HISTORY_DAYS - i) * 1000;
 
-      sets.push({ id: newId(), exerciseId: exercise.id, date, weight: toKg(top, 'lb'), reps, rpe, createdAt: base });
+      sets.push({ id: newId(), exerciseId: exercise.id, date, weight: toKg(top, 'lb'), reps, rir, createdAt: base });
       for (let b = 0; b < plan.backoffSets; b++) {
         sets.push({ id: newId(), exerciseId: exercise.id, date, weight: toKg(backoff, 'lb'), reps: plan.backoffReps, createdAt: base + b + 1 });
       }

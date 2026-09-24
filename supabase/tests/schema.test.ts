@@ -54,6 +54,7 @@ beforeAll(async () => {
     insert into auth.users (id) values ('${A}'), ('${B}');
   `);
   await db.exec(readFileSync(migrationPath, 'utf8'));
+  await db.exec(readFileSync(fileURLToPath(new URL('../migrations/002_rir.sql', import.meta.url)), 'utf8'));
 });
 
 describe('schema security', () => {
@@ -138,7 +139,7 @@ describe('functions', () => {
           date: '2026-09-02',
           weight_kg: 60.5,
           reps: 8,
-          rpe: 8.5,
+          rir: 1.5,
           notes: null,
           created_at: '2026-09-02T10:00:00.000Z',
         },

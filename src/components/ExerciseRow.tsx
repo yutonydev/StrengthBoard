@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 import type { Exercise, Unit, WorkoutSet } from '../types';
 import { trendOf, type ExerciseStats } from '../lib/stats';
-import { daysBetween, fmtAgo, fmtAgoLong, today } from '../lib/dates';
+import { daysBetween, fmtAgo, fmtAgoLong, fmtShortDate, today } from '../lib/dates';
 import { fmtNum, fmtSet, fromKg } from '../lib/units';
 import { similarity } from '../lib/similarity';
 import { Sparkline } from './Sparkline';
@@ -327,14 +327,12 @@ export const ExerciseRow = memo(function ExerciseRow({
         </div>
 
         <div className="hidden flex-col items-end leading-tight md:flex">
-          {last ? (
+          {stats.heaviest ? (
             <>
-              <span className="font-mono text-[13px] font-semibold text-fg">{fmtNum(Math.round(fromKg(last.bestE1rm, unit)))}</span>
-              {last.isPR ? (
-                <PrBadge className="mt-0.5" />
-              ) : (
-                <span className="font-mono text-[11px] text-muted">best {fmtNum(Math.round(fromKg(stats.bestE1rm, unit)))}</span>
-              )}
+              <span className="font-mono text-[13px] font-semibold text-fg">
+                {fmtSet(stats.heaviest.weight, stats.heaviest.reps, unit)}
+              </span>
+              {last?.isPR ? <PrBadge className="mt-0.5" /> : <span className="text-[11px] text-muted">{fmtShortDate(stats.heaviest.date)}</span>}
             </>
           ) : (
             <span className="font-mono text-xs text-muted">–</span>

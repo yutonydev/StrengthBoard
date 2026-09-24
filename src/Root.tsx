@@ -1,10 +1,14 @@
+import { useEffect, useState } from 'react';
 import App from './App';
 import { AuthLayout } from './auth/AuthLayout';
 import { AuthScreen } from './auth/AuthScreen';
 import { useAuth } from './auth/AuthProvider';
 import { SetNewPassword } from './auth/SetNewPassword';
-import { Logo } from './components/Logo';
+import { Splash } from './components/Splash';
 import { supabaseConfigured } from './supabase';
+
+const MIN_SPLASH_MS = 900;
+const SPLASH_FADE_MS = 300;
 
 function SetupNotice() {
   return (
@@ -18,20 +22,40 @@ function SetupNotice() {
   );
 }
 
-function Splash() {
-  return (
-    <main className="flex min-h-dvh items-center justify-center" aria-busy="true">
-      <Logo />
-      <span className="sr-only">Loading</span>
-    </main>
-  );
+function useSplash(ready: boolean) {
+  const [minDone, setMinDone] = useState(false);
+  const [gone, setGone] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setMinDone(true), MIN_SPLASH_MS);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const leaving = ready && minDone;
+
+  useEffect(() => {
+    if (!leaving) return;
+    const timer = setTimeout(() => setGone(true), SPLASH_FADE_MS);
+    return () => clearTimeout(timer);
+  }, [leaving]);
+
+  return { leaving, gone };
 }
 
 export function Root() {
   const { status, user, recovering } = useAuth();
-  if (!supabaseConfigured) return <SetupNotice />;
-  if (status === 'loading') return <Splash />;
-  if (recovering && user) return <SetNewPassword />;
-  if (status !== 'signedIn' || !user) return <AuthScreen />;
-  return <App key={user.id} user={user} />;
+  const { leaving, gone } = useSplash(!supabaseConfigured || status !== 'loading');
+
+  let screen = <AuthScreen />;
+  if (!supabaseConfigured) screen = <SetupNotice />;
+  else if (status === 'loading') screen = <div className="min-h-dvh" />;
+  else if (recovering && user) screen = <SetNewPassword />;
+  else if (status === 'signedIn' && user) screen = <App key={user.id} user={user} />;
+
+  return (
+    <>
+      {screen}
+      {!gone && <Splash leaving={leaving} />}
+    </>
+  );
 }

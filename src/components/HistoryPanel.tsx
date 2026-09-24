@@ -3,7 +3,7 @@ import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YA
 import { ChartLine, Plus, Trash2 } from 'lucide-react';
 import type { Exercise, Unit, WorkoutSet } from '../types';
 import type { ExerciseStats } from '../lib/stats';
-import { e1rm, newestFirst } from '../lib/stats';
+import { newestFirst } from '../lib/stats';
 import { fmtShortDate, fmtWeekday } from '../lib/dates';
 import { fmtCompact, fmtNum, fmtSet, fmtWeight, fromKg } from '../lib/units';
 import { PrBadge } from './PrBadge';
@@ -20,11 +20,10 @@ interface Point {
   date: string;
   top: number;
   topReps: number;
-  e1rm: number;
   pr: boolean;
 }
 
-function ChartTooltip({ active, payload, unit }: { active?: boolean; payload?: { payload: Point }[]; unit: Unit }) {
+function ChartTooltip({ active, payload }: { active?: boolean; payload?: { payload: Point }[] }) {
   if (!active || !payload?.length) return null;
   const p = payload[0].payload;
   return (
@@ -39,11 +38,6 @@ function ChartTooltip({ active, payload, unit }: { active?: boolean; payload?: {
           {fmtNum(p.top)}×{p.topReps}
         </span>
         <span className="text-muted">top set</span>
-      </div>
-      <div className="mt-0.5 flex items-center gap-2">
-        <span className="w-3 border-t-2 border-dashed border-series-2" aria-hidden="true" />
-        <span className="font-mono font-semibold text-fg">{Math.round(p.e1rm)}</span>
-        <span className="text-muted">est. 1RM ({unit})</span>
       </div>
     </div>
   );
@@ -68,7 +62,6 @@ export function HistoryPanel({ exercise, stats, unit, onLogFirst, onDeleteSet }:
         date: s.date,
         top: fromKg(s.top.weight, unit),
         topReps: s.top.reps,
-        e1rm: fromKg(s.bestE1rm, unit),
         pr: s.isPR,
       })),
     [stats.sessions, unit],
@@ -104,14 +97,12 @@ export function HistoryPanel({ exercise, stats, unit, onLogFirst, onDeleteSet }:
     );
   }
 
-  const best = stats.bestE1rmSession!;
   const heaviest = stats.heaviest!;
   const first = stats.sessions[0];
 
   return (
     <section aria-label={`${exercise.name} history`} className="animate-in border-t border-line bg-surface-2 px-3 py-3 sm:pl-10">
-      <dl className="grid grid-cols-2 gap-x-4 gap-y-2.5 sm:grid-cols-3 lg:grid-cols-6">
-        <Stat label="Best est. 1RM" value={String(Math.round(fromKg(best.bestE1rm, unit)))} sub={fmtShortDate(best.date)} />
+      <dl className="grid grid-cols-2 gap-x-4 gap-y-2.5 sm:grid-cols-3 lg:grid-cols-5">
         <Stat label="Heaviest set" value={fmtSet(heaviest.weight, heaviest.reps, unit)} sub={fmtShortDate(heaviest.date)} />
         <Stat label="Sessions" value={String(stats.sessions.length)} sub={`${stats.prSetIds.size} PRs`} />
         <Stat label="Sets" value={String(stats.totalSets)} />
@@ -127,13 +118,10 @@ export function HistoryPanel({ exercise, stats, unit, onLogFirst, onDeleteSet }:
               <span className="h-0.5 w-4 rounded bg-series-1" aria-hidden="true" /> Top set ({unit})
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="w-4 border-t-2 border-dashed border-series-2" aria-hidden="true" /> Est. 1RM
-            </span>
-            <span className="flex items-center gap-1.5">
               <span className="size-2 rounded-full bg-pr" aria-hidden="true" /> PR
             </span>
           </figcaption>
-          <div className="h-52" role="img" aria-label={`Chart of ${exercise.name} top set and estimated 1RM across ${data.length} sessions. Every value is listed in the table.`}>
+          <div className="h-52" role="img" aria-label={`Chart of ${exercise.name} top set across ${data.length} sessions. Every value is listed in the table.`}>
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: -8 }}>
                 <CartesianGrid vertical={false} stroke="var(--lb-line)" />
@@ -156,16 +144,15 @@ export function HistoryPanel({ exercise, stats, unit, onLogFirst, onDeleteSet }:
                   allowDecimals={false}
                 />
                 <Tooltip
-                  content={<ChartTooltip unit={unit} />}
+                  content={<ChartTooltip />}
                   cursor={{ stroke: 'var(--lb-line-strong)', strokeWidth: 1 }}
                   isAnimationActive={false}
                 />
                 <Line
                   type="monotone"
-                  dataKey="e1rm"
-                  stroke="var(--lb-series-2)"
+                  dataKey="top"
+                  stroke="var(--lb-series-1)"
                   strokeWidth={2}
-                  strokeDasharray="4 3"
                   isAnimationActive={false}
                   dot={(props: { cx?: number; cy?: number; payload?: Point; index?: number }) =>
                     props.payload?.pr ? (
@@ -182,15 +169,6 @@ export function HistoryPanel({ exercise, stats, unit, onLogFirst, onDeleteSet }:
                       <g key={props.index} />
                     )
                   }
-                  activeDot={{ r: 4, fill: 'var(--lb-series-2)', stroke: 'var(--lb-surface)', strokeWidth: 2 }}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="top"
-                  stroke="var(--lb-series-1)"
-                  strokeWidth={2}
-                  dot={false}
-                  isAnimationActive={false}
                   activeDot={{ r: 4, fill: 'var(--lb-series-1)', stroke: 'var(--lb-surface)', strokeWidth: 2 }}
                 />
               </LineChart>
@@ -207,8 +185,7 @@ export function HistoryPanel({ exercise, stats, unit, onLogFirst, onDeleteSet }:
                   <th scope="col" className="py-1.5 pr-2 pl-3 font-medium">Date</th>
                   <th scope="col" className="px-2 py-1.5 text-right font-medium">#</th>
                   <th scope="col" className="px-2 py-1.5 text-right font-medium">Set</th>
-                  <th scope="col" className="px-2 py-1.5 text-right font-medium">e1RM</th>
-                  <th scope="col" className="hidden px-2 py-1.5 text-right font-medium sm:table-cell">RPE</th>
+                  <th scope="col" className="hidden px-2 py-1.5 text-right font-medium sm:table-cell">RIR</th>
                   <th scope="col" className="hidden px-2 py-1.5 font-medium md:table-cell">Notes</th>
                   <th scope="col" className="w-10 py-1.5 pr-2">
                     <span className="sr-only">Actions</span>
@@ -232,17 +209,14 @@ export function HistoryPanel({ exercise, stats, unit, onLogFirst, onDeleteSet }:
                       </td>
                       <td className="px-2 py-1 text-right text-muted">{n}</td>
                       <td className="px-2 py-1 text-right whitespace-nowrap text-fg">
+                        {isPR && <PrBadge className="mr-1.5" />}
                         {set.weight === 0 ? 'BW' : fmtWeight(set.weight, unit)}
                         <span className="text-muted">×</span>
                         {set.reps}
                       </td>
-                      <td className="px-2 py-1 text-right whitespace-nowrap">
-                        {isPR && <PrBadge className="mr-1.5" />}
-                        <span className={isPR ? 'font-semibold text-fg' : 'text-muted'}>
-                          {fmtNum(Math.round(fromKg(e1rm(set.weight, set.reps), unit)))}
-                        </span>
+                      <td className="hidden px-2 py-1 text-right text-muted sm:table-cell">
+                        {set.rir === undefined ? '–' : fmtNum(set.rir)}
                       </td>
-                      <td className="hidden px-2 py-1 text-right text-muted sm:table-cell">{set.rpe ? fmtNum(set.rpe) : '–'}</td>
                       <td className="hidden max-w-48 truncate px-2 py-1 font-sans text-xs text-muted md:table-cell" title={set.notes}>
                         {set.notes ?? ''}
                       </td>

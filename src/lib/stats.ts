@@ -1,17 +1,10 @@
 import type { WorkoutSet } from '../types';
 import { daysBetween } from './dates';
 
-export function e1rm(weight: number, reps: number): number {
-  if (reps <= 1) return weight;
-  return weight * (1 + reps / 30);
-}
-
 export interface Session {
   date: string;
   sets: WorkoutSet[];
   top: WorkoutSet;
-  best: WorkoutSet;
-  bestE1rm: number;
   volume: number;
   isPR: boolean;
 }
@@ -20,8 +13,6 @@ export interface ExerciseStats {
   sessions: Session[];
   last?: Session;
   prev?: Session;
-  bestE1rm: number;
-  bestE1rmSession?: Session;
   heaviest?: WorkoutSet;
   totalSets: number;
   totalVolume: number;
@@ -42,7 +33,7 @@ export function buildStats(sets: WorkoutSet[]): ExerciseStats {
   const sorted = [...sets].sort(bySequence);
   const sessions: Session[] = [];
   const prSetIds = new Set<string>();
-  let runningBest = -Infinity;
+  let heaviestSoFar = -Infinity;
   let heaviest: WorkoutSet | undefined;
   let totalVolume = 0;
 
@@ -53,38 +44,26 @@ export function buildStats(sets: WorkoutSet[]): ExerciseStats {
     while (i < sorted.length && sorted[i].date === date) group.push(sorted[i++]);
 
     let top = group[0];
-    let best = group[0];
-    let bestE = e1rm(best.weight, best.reps);
     let volume = 0;
     for (const s of group) {
       volume += s.weight * s.reps;
       if (s.weight > top.weight + EPS || (Math.abs(s.weight - top.weight) <= EPS && s.reps > top.reps)) top = s;
-      const e = e1rm(s.weight, s.reps);
-      if (e > bestE + EPS) {
-        best = s;
-        bestE = e;
-      }
-      if (!heaviest || s.weight > heaviest.weight + EPS) heaviest = s;
     }
     totalVolume += volume;
 
-    const isPR = sessions.length > 0 && bestE > runningBest + EPS;
-    if (isPR) prSetIds.add(best.id);
-    runningBest = Math.max(runningBest, bestE);
-    sessions.push({ date, sets: group, top, best, bestE1rm: bestE, volume, isPR });
-  }
-
-  let bestE1rmSession: Session | undefined;
-  for (const s of sessions) {
-    if (!bestE1rmSession || s.bestE1rm > bestE1rmSession.bestE1rm + EPS) bestE1rmSession = s;
+    const isPR = sessions.length > 0 && top.weight > heaviestSoFar + EPS;
+    if (isPR) prSetIds.add(top.id);
+    if (top.weight > heaviestSoFar + EPS) {
+      heaviestSoFar = top.weight;
+      heaviest = top;
+    }
+    sessions.push({ date, sets: group, top, volume, isPR });
   }
 
   return {
     sessions,
     last: sessions[sessions.length - 1],
     prev: sessions[sessions.length - 2],
-    bestE1rm: bestE1rmSession?.bestE1rm ?? 0,
-    bestE1rmSession,
     heaviest,
     totalSets: sorted.length,
     totalVolume,

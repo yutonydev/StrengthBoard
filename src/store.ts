@@ -129,7 +129,7 @@ export function parseData(raw: unknown): AppData | null {
           date: s.date,
           weight: s.weight,
           reps: s.reps,
-          rpe: typeof s.rpe === 'number' && s.rpe > 0 && s.rpe <= 10 ? s.rpe : undefined,
+          rir: typeof s.rir === 'number' && s.rir >= 0 && s.rir <= 10 ? s.rir : undefined,
           notes: typeof s.notes === 'string' && s.notes.trim() ? s.notes.trim() : undefined,
           createdAt: typeof s.createdAt === 'number' ? s.createdAt : 0,
         }]

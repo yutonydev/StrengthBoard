@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { AppData, Exercise, WorkoutSet } from '../types';
-import { buildStats, e1rm, trendOf } from './stats';
+import { buildStats, trendOf } from './stats';
 import { rankMatches, similarity } from './similarity';
 import { fmtAgo, daysBetween } from './dates';
 import { fmtSet, fmtWeight, toKg } from './units';
@@ -12,13 +12,6 @@ function set(date: string, lb: number, reps: number): WorkoutSet {
   seq++;
   return { id: `s${seq}`, exerciseId: 'x', date, weight: toKg(lb, 'lb'), reps, createdAt: seq };
 }
-
-describe('e1rm', () => {
-  it('uses Epley and treats singles as their own max', () => {
-    expect(e1rm(200, 1)).toBe(200);
-    expect(e1rm(225, 5)).toBeCloseTo(262.5);
-  });
-});
 
 describe('buildStats', () => {
   const sets = [
@@ -41,9 +34,10 @@ describe('buildStats', () => {
     expect(fmtSet(st.sessions[0].top.weight, st.sessions[0].top.reps, 'lb')).toBe('225×5');
   });
 
-  it('flags PR sessions by estimated 1RM, never the first session', () => {
-    expect(st.sessions.map((s) => s.isPR)).toEqual([false, true, false, false, true]);
+  it('flags a PR when the top set beats every earlier session, never the first', () => {
+    expect(st.sessions.map((s) => s.isPR)).toEqual([false, true, false, true, false]);
     expect(st.prSetIds.size).toBe(2);
+    expect(st.heaviest?.weight).toBeCloseTo(toKg(235, 'lb'));
   });
 
   it('computes trend direction across a window', () => {

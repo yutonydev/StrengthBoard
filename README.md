@@ -1,8 +1,6 @@
 # StrengthBoard
 
-A watchlist for your lifts. Every exercise you track sits on one screen as a dense row:
-its trend, its last three sessions, the change since last time, estimated 1RM, and PR flags.
-You can read the state of your training in a few seconds.
+**Track your lifts and see how far you've come.**
 
 ```bash
 npm install
@@ -18,7 +16,7 @@ npm run build    # type-check + production build to dist/
 | Trend · 10 | Top-set weight over the last 10 sessions. Sage means up across the window, amber means down, gray means flat. Hover to see each session. |
 | Last 3 sessions | Top set of each session, oldest → newest (`225×5 · 230×5 · 235×3`). |
 | Δ Top | Latest top set compared with the previous session, with an arrow, sign, and %. |
-| e1RM | Best estimated 1RM (Epley) in the latest session. A **PR** badge appears when it beats every earlier session. |
+| Best | The heaviest top set you've ever done for that lift, and when. A **PR** badge appears when your latest session beat it. |
 | Last | Time since you last trained it. A clock icon means more than 14 days ago. |
 
 Click a row (its name, sparkline, or history) to open the full history: stats, a chart of top
@@ -49,13 +47,13 @@ The board starts empty. The menu in the header can export or import a JSON backu
 
 ```ts
 Exercise   { id, name, category?, pinned, createdAt }
-WorkoutSet { id, exerciseId, date: 'YYYY-MM-DD', weight, reps, rpe?, notes?, createdAt }
+WorkoutSet { id, exerciseId, date: 'YYYY-MM-DD', weight, reps, rir?, notes?, createdAt }
 ```
 
 ## Setup
 
 1. **Create a Supabase project** at supabase.com. Name it StrengthBoard.
-2. **Create the tables.** In the project's SQL Editor, paste the contents of `supabase/migrations/001_init.sql` and run it.
+2. **Create the tables.** In the project's SQL Editor, run each file in `supabase/migrations/` in order.
 3. **Allow the app's addresses.** Under Authentication, URL Configuration: set Site URL to your deployed address (for example `https://strengthboard.vercel.app`). Add `http://localhost:5173` and the deployed address to Redirect URLs, so confirmation and reset emails link back to the app.
 4. **Keep email confirmation on** under Authentication, Sign In / Providers, Email. The built-in email sender is rate-limited, so add your own SMTP there before inviting many people.
 5. **Connect the app.** Copy `.env.example` to `.env.local` and fill in the Project URL and the publishable key (Project Settings, API Keys). A legacy anon key also works. `.env.local` is git-ignored.
@@ -86,10 +84,10 @@ src/
   store.ts                reducer and import validation
   auth/                   sign in, create account, reset password, session state
   sync/                   row mapping, remote ops, upload queue, cache, useSyncedStore
-  lib/stats.ts            sessions, top sets, Epley e1RM, PR detection, summary
+  lib/stats.ts            sessions, top sets, PR detection, summary
   lib/similarity.ts       fuzzy name matching and aliases, common-lift catalog
   components/             rows, sparkline, log form, history, add exercise, menus, sync status
 supabase/
-  migrations/001_init.sql tables, row-level security, reorder and replace functions
+  migrations/             tables, row-level security, reorder and replace functions
   tests/schema.test.ts    runs the migration in PGlite and checks the security rules
 ```

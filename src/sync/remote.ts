@@ -7,7 +7,7 @@ import { boardFromDb, type DbExercise, type DbSet } from './rows';
 
 const PAGE = 1000;
 const EXERCISE_COLUMNS = 'id,name,category,pinned,position,created_at';
-const SET_COLUMNS = 'id,exercise_id,date,weight_kg,reps,rpe,notes,created_at';
+const SET_COLUMNS = 'id,exercise_id,date,weight_kg,reps,rir,notes,created_at';
 
 interface Result {
   error: { message: string; code?: string } | null;

@@ -396,7 +396,7 @@ export default function App({ user }: { user: AuthUser }) {
               <span>Trend · 10</span>
               <span className="hidden md:block">Last 3 sessions</span>
               <span className="text-right">Δ Top</span>
-              <span className="hidden text-right md:block">e1RM</span>
+              <span className="hidden text-right md:block">Best</span>
               <span className="hidden text-right md:block">Last</span>
               <span />
             </div>
@@ -468,7 +468,7 @@ export default function App({ user }: { user: AuthUser }) {
         {!isEmpty && (
           <p className="mt-3 hidden text-xs text-muted sm:block">
             Click a row for full history · <span className="kbd">N</span> new lift · <span className="kbd">/</span> filter · drag{' '}
-            the grip to reorder · e1RM uses the Epley formula · saved to your account
+            the grip to reorder · a PR is your heaviest top set yet · saved to your account
           </p>
         )}
       </main>

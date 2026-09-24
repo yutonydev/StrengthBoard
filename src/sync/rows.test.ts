@@ -20,18 +20,18 @@ describe('rows', () => {
   it('round-trips lifts and sets without losing anything', () => {
     expect(exerciseFromDb(exerciseToDb(lift, 0))).toEqual(lift);
     expect(setFromDb(setToDb(set))).toEqual(set);
-    const full: WorkoutSet = { ...set, rpe: 8.5, notes: 'belt' };
+    const full: WorkoutSet = { ...set, rir: 1.5, notes: 'belt' };
     expect(setFromDb(setToDb(full))).toEqual(full);
   });
 
   it('stores missing optional values as null', () => {
-    expect(setToDb(set)).toMatchObject({ rpe: null, notes: null, weight_kg: 81.6466266, exercise_id: 'b' });
+    expect(setToDb(set)).toMatchObject({ rir: null, notes: null, weight_kg: 81.6466266, exercise_id: 'b' });
     expect(exerciseToDb({ ...lift, category: undefined }, 0).category).toBeNull();
   });
 
   it('accepts numeric columns that arrive as strings', () => {
-    const row = { ...setToDb(set), rpe: '8.5', weight_kg: '100.25', reps: '5' } as unknown as DbSet;
-    expect(setFromDb(row)).toMatchObject({ rpe: 8.5, weight: 100.25, reps: 5 });
+    const row = { ...setToDb(set), rir: '1.5', weight_kg: '100.25', reps: '5' } as unknown as DbSet;
+    expect(setFromDb(row)).toMatchObject({ rir: 1.5, weight: 100.25, reps: 5 });
   });
 
   it('builds a board ordered by position with pinned lifts first', () => {
