@@ -61,6 +61,13 @@ describe('toRemoteOps', () => {
     expect(ops({ type: 'deleteSet', id: 's1' })).toEqual([{ kind: 'deleteSet', id: 's1' }]);
   });
 
+  it('adds and deletes a whole workout in one write each', () => {
+    const S2: WorkoutSet = { ...S, id: 's2', reps: 3 };
+    const S3: WorkoutSet = { ...S, id: 's3', reps: 2 };
+    expect(ops({ type: 'addSets', sets: [S2, S3] })).toEqual([{ kind: 'upsertSets', rows: [setToDb(S2), setToDb(S3)] }]);
+    expect(ops({ type: 'deleteSets', ids: ['s1', 's2'] })).toEqual([{ kind: 'deleteSets', ids: ['s1', 's2'] }]);
+  });
+
   it('saves the unit and nothing else from settings', () => {
     expect(ops({ type: 'settings', patch: { unit: 'kg' } })).toEqual([{ kind: 'setUnit', unit: 'kg' }]);
     expect(ops({ type: 'settings', patch: {} })).toEqual([]);

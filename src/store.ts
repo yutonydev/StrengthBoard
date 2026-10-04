@@ -16,6 +16,8 @@ export type Action =
   | { type: 'move'; id: string; dir: -1 | 1 }
   | { type: 'addSet'; set: WorkoutSet }
   | { type: 'deleteSet'; id: string }
+  | { type: 'addSets'; sets: WorkoutSet[] }
+  | { type: 'deleteSets'; ids: string[] }
   | { type: 'restoreSet'; set: WorkoutSet }
   | { type: 'settings'; patch: Partial<Settings> }
   | { type: 'replace'; data: AppData };
@@ -86,6 +88,15 @@ export function reducer(state: AppData, action: Action): AppData {
       return state.sets.some((s) => s.id === action.set.id) ? state : { ...state, sets: [...state.sets, action.set] };
     case 'deleteSet':
       return { ...state, sets: state.sets.filter((s) => s.id !== action.id) };
+    case 'addSets': {
+      const known = new Set(state.sets.map((s) => s.id));
+      const fresh = action.sets.filter((s) => !known.has(s.id));
+      return fresh.length ? { ...state, sets: [...state.sets, ...fresh] } : state;
+    }
+    case 'deleteSets': {
+      const drop = new Set(action.ids);
+      return { ...state, sets: state.sets.filter((s) => !drop.has(s.id)) };
+    }
     case 'settings':
       return { ...state, settings: { ...state.settings, ...action.patch } };
     case 'replace':

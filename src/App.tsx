@@ -10,7 +10,7 @@ import {
   type Modifier,
 } from '@dnd-kit/core';
 import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
-import { Database, Download, Monitor, Moon, MoreVertical, Plus, Search, Sun, Trash2, Upload, X } from 'lucide-react';
+import { Database, Download, Dumbbell, Monitor, Moon, MoreVertical, Plus, Search, Sun, Trash2, Upload, X } from 'lucide-react';
 import type { Exercise, ThemePref, WorkoutSet } from './types';
 import { emptyData, parseData } from './store';
 import { useSyncedStore } from './sync/useSyncedStore';
@@ -18,6 +18,8 @@ import type { AuthUser } from './auth/AuthProvider';
 import { SyncStatus } from './components/SyncStatus';
 import { AccountMenu } from './components/AccountMenu';
 import { sampleData } from './lib/sample';
+import { ProgressPanel } from './components/ProgressPanel';
+import { WorkoutLogger } from './components/WorkoutLogger';
 import { buildStats, overview, type ExerciseStats } from './lib/stats';
 import { today } from './lib/dates';
 import { newId } from './lib/id';
@@ -59,7 +61,9 @@ export default function App({ user }: { user: AuthUser }) {
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState<string | null>(null);
   const [highlight, setHighlight] = useState<{ id: string; n: number } | null>(null);
-  const [logged, setLogged] = useState<{ id: string; n: number } | null>(null);
+  const [logged, setLogged] = useState<{ ids: string[]; n: number } | null>(null);
+  const [workoutOpen, setWorkoutOpen] = useState(false);
+  const workoutButtonRef = useRef<HTMLButtonElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const dataRef = useRef(data);
@@ -126,7 +130,7 @@ export default function App({ user }: { user: AuthUser }) {
       toggleEdit: (id) => setEditing((cur) => (cur === id ? null : id)),
       logSet: (id, s) => {
         dispatch({ type: 'addSet', set: { id: newId(), exerciseId: id, createdAt: Date.now(), ...s } });
-        setLogged((prev) => ({ id, n: (prev?.n ?? 0) + 1 }));
+        setLogged((prev) => ({ ids: [id], n: (prev?.n ?? 0) + 1 }));
       },
       deleteSet: (set) => {
         dispatch({ type: 'deleteSet', id: set.id });
@@ -169,6 +173,24 @@ export default function App({ user }: { user: AuthUser }) {
     setExpanded(new Set());
     setLogging(null);
     push('Loaded sample data', () => dispatch({ type: 'replace', data: previous }));
+  }
+
+  function saveWorkout(newSets: WorkoutSet[]) {
+    setWorkoutOpen(false);
+    if (newSets.length === 0) return;
+    dispatch({ type: 'addSets', sets: newSets });
+    const liftIds = Array.from(new Set(newSets.map((s) => s.exerciseId)));
+    setLogged((prev) => ({ ids: liftIds, n: (prev?.n ?? 0) + 1 }));
+    const ids = newSets.map((s) => s.id);
+    push(`Logged ${newSets.length} ${newSets.length === 1 ? 'set' : 'sets'} across ${liftIds.length} ${liftIds.length === 1 ? 'lift' : 'lifts'}`, () =>
+      dispatch({ type: 'deleteSets', ids }),
+    );
+    requestAnimationFrame(() => workoutButtonRef.current?.focus());
+  }
+
+  function closeWorkout() {
+    setWorkoutOpen(false);
+    requestAnimationFrame(() => workoutButtonRef.current?.focus());
   }
 
   function clearAll() {
@@ -216,6 +238,9 @@ export default function App({ user }: { user: AuthUser }) {
       } else if (e.key === 'n' || e.key === 'N') {
         e.preventDefault();
         setAdding(true);
+      } else if ((e.key === 'w' || e.key === 'W') && dataRef.current.exercises.length > 0) {
+        e.preventDefault();
+        setWorkoutOpen(true);
       }
     };
     window.addEventListener('keydown', onKey);
@@ -249,7 +274,7 @@ export default function App({ user }: { user: AuthUser }) {
             logging={logging === e.id}
             editing={editing === e.id}
             highlight={highlight?.id === e.id ? highlight.n : 0}
-            logged={logged?.id === e.id ? logged.n : 0}
+            logged={logged?.ids.includes(e.id) ? logged.n : 0}
             dragDisabled={filtering}
             categories={categories}
             otherNames={allNames}
@@ -271,6 +296,18 @@ export default function App({ user }: { user: AuthUser }) {
           <Logo />
           <h1 className="text-[15px] font-semibold tracking-tight text-fg">StrengthBoard</h1>
           <div className="ml-auto flex items-center gap-1">
+            {!isEmpty && (
+              <button
+                ref={workoutButtonRef}
+                type="button"
+                onClick={() => setWorkoutOpen(true)}
+                className="btn btn-primary mr-2 h-9 px-3 sm:h-8"
+                title="Log a whole workout (W)"
+              >
+                <Dumbbell size={15} aria-hidden="true" />
+                <span className="hidden sm:inline">Log workout</span>
+              </button>
+            )}
             <SyncStatus sync={sync} />
             <div role="group" aria-label="Weight unit" className="flex rounded-md border border-line-strong p-0.5">
               {(['lb', 'kg'] as const).map((u) => (
@@ -324,6 +361,8 @@ export default function App({ user }: { user: AuthUser }) {
           </dl>
         </section>
         )}
+
+        {!isEmpty && <ProgressPanel exercises={exercises} sets={sets} statsById={statsById} unit={unit} />}
 
         {!isEmpty && (
           <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -469,6 +508,17 @@ export default function App({ user }: { user: AuthUser }) {
           </p>
         )}
       </main>
+
+      {workoutOpen && (
+        <WorkoutLogger
+          userId={user.id}
+          exercises={exercises}
+          statsById={statsById}
+          unit={unit}
+          onSave={saveWorkout}
+          onClose={closeWorkout}
+        />
+      )}
 
       <Toasts toasts={toasts} dismiss={dismiss} />
     </div>

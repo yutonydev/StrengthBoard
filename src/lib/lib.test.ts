@@ -157,3 +157,20 @@ describe('uuidV4', () => {
     expect(id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
   });
 });
+
+describe('batch set actions', () => {
+  const lift: Exercise = { id: 'L', name: 'L', pinned: false, createdAt: 0 };
+  const a: WorkoutSet = { id: 'A', exerciseId: 'L', date: '2026-09-01', weight: 50, reps: 5, createdAt: 1 };
+  const b: WorkoutSet = { id: 'B', exerciseId: 'L', date: '2026-09-01', weight: 55, reps: 3, createdAt: 2 };
+
+  it('adds many sets at once without duplicating ones already present', () => {
+    const base = reducer(reducer(emptyData(), { type: 'addExercise', exercise: lift }), { type: 'addSet', set: a });
+    const next = reducer(base, { type: 'addSets', sets: [a, b] });
+    expect(next.sets.map((s) => s.id)).toEqual(['A', 'B']);
+  });
+
+  it('deletes many sets at once', () => {
+    const base = reducer(emptyData(), { type: 'addSets', sets: [a, b] });
+    expect(reducer(base, { type: 'deleteSets', ids: ['A', 'B'] }).sets).toHaveLength(0);
+  });
+});
