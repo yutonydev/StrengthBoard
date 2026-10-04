@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import type { Session } from '@supabase/supabase-js';
-import { supabase, supabaseConfigured } from '../supabase';
+import { storedUser, supabase, supabaseConfigured } from '../supabase';
+import { withTimeout } from '../lib/timeout';
 
 export interface AuthUser {
   id: string;
@@ -34,7 +35,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
       setStatus(next ? 'signedIn' : 'signedOut');
     };
-    void supabase.auth.getSession().then(({ data }) => apply(data.session));
+    withTimeout(supabase.auth.getSession(), 6000)
+      .then(({ data }) => apply(data.session))
+      .catch(() => {
+        const cached = storedUser();
+        setUser((prev) => prev ?? cached);
+        setStatus((prev) => (prev === 'loading' ? (cached ? 'signedIn' : 'signedOut') : prev));
+      });
     const { data } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'PASSWORD_RECOVERY') setRecovering(true);
       if (event === 'SIGNED_OUT') setRecovering(false);

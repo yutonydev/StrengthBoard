@@ -22,11 +22,24 @@ npm run build    # type-check + production build to dist/
 Click a row (its name, sparkline, or history) to open the full history: stats, a chart of top
 set and est. 1RM per session, and a table of every set, newest first.
 
+## How far you've come
+
+Above the board, two panels show the long view:
+
+- **Consistency**: a calendar of the last six months, one square per day, darker on days with more sets. Hover a day to see what you trained. It also shows your current and best streak of consecutive training weeks.
+- **Strength**: every lift with two or more sessions, ranked by how much its top set has grown since your first session, plus your typical (median) gain across all lifts.
+
+Collapse the section with its heading; the choice is remembered on that device.
+
 ## Logging
 
 Press **+** on a row. Weight and reps are prefilled from your last top set, and the date defaults to today.
 Press **Enter** to log. The form stays open with the same values, so a repeat set is one keypress.
 Press **Esc** to close it. The sets you've logged that day show as chips, and you can remove any of them.
+
+## Logging a whole workout
+
+Press **Log workout** in the header (or **W**) after a session. Pick the date once, then click the lifts you trained: each starts with your last top set filled in. Type over the numbers, press **Enter** to add another set just like it, and **Ctrl+Enter** to save everything as one upload with a single undo. Closing the window keeps your draft on that device until you save or discard it.
 
 ## Organizing
 

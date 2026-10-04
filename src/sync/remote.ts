@@ -1,4 +1,5 @@
 import { supabase } from '../supabase';
+import { withTimeout } from '../lib/timeout';
 import type { AppData, Unit } from '../types';
 import { classify } from './classify';
 import type { RemoteOp } from './ops';
@@ -14,7 +15,11 @@ interface Result {
   status: number;
 }
 
-export async function fetchBoard(): Promise<AppData> {
+export function fetchBoard(): Promise<AppData> {
+  return withTimeout(loadBoard(), 20000);
+}
+
+async function loadBoard(): Promise<AppData> {
   const lifts = await supabase.from('exercises').select(EXERCISE_COLUMNS).order('position').range(0, PAGE - 1);
   if (lifts.error) throw lifts.error;
   const sets: DbSet[] = [];
@@ -45,6 +50,8 @@ function run(op: RemoteOp, userId: string): PromiseLike<Result> {
       return supabase.from('sets').upsert(op.rows);
     case 'deleteSet':
       return supabase.from('sets').delete().eq('id', op.id);
+    case 'deleteSets':
+      return supabase.from('sets').delete().in('id', op.ids);
     case 'setUnit':
       return supabase.from('user_settings').upsert({ user_id: userId, unit: op.unit });
     case 'replaceBoard':
@@ -53,6 +60,6 @@ function run(op: RemoteOp, userId: string): PromiseLike<Result> {
 }
 
 export async function sendOp(op: RemoteOp, userId: string): Promise<SendOutcome> {
-  const { status, error } = await run(op, userId);
+  const { status, error } = await withTimeout(run(op, userId), 15000);
   return classify(status, error);
 }

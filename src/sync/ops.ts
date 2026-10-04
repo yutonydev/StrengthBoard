@@ -9,6 +9,7 @@ export type RemoteOp =
   | { kind: 'reorder'; ids: string[] }
   | { kind: 'upsertSets'; rows: DbSet[] }
   | { kind: 'deleteSet'; id: string }
+  | { kind: 'deleteSets'; ids: string[] }
   | { kind: 'setUnit'; unit: Unit }
   | { kind: 'replaceBoard'; exercises: DbExercise[]; sets: DbSet[] };
 
@@ -51,6 +52,10 @@ export function toRemoteOps(action: Action, after: AppData): RemoteOp[] {
       return [{ kind: 'upsertSets', rows: [setToDb(action.set)] }];
     case 'deleteSet':
       return [{ kind: 'deleteSet', id: action.id }];
+    case 'addSets':
+      return action.sets.length ? [{ kind: 'upsertSets', rows: action.sets.map(setToDb) }] : [];
+    case 'deleteSets':
+      return action.ids.length ? [{ kind: 'deleteSets', ids: action.ids }] : [];
     case 'settings':
       return action.patch.unit ? [{ kind: 'setUnit', unit: action.patch.unit }] : [];
     case 'replace': {
